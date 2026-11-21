@@ -1,5 +1,6 @@
 #include "Graph.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 
@@ -50,8 +51,8 @@ void Graph::addEdge(int from, int to, double weight) {
     if (!isValidVertex(to)) {
         throw std::out_of_range(invalidVertexMessage("destination", to, vertexCount()));
     }
-    if (weight < 0.0) {
-        throw std::invalid_argument("Graph: edge weight cannot be negative (got " +
+    if (!std::isfinite(weight) || weight < 0.0) {
+        throw std::invalid_argument("Graph: edge weight must be finite and non-negative (got " +
                                     std::to_string(weight) + ").");
     }
 

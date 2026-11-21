@@ -18,6 +18,7 @@
  * - Employs a binary min-priority queue (std::priority_queue with std::greater).
  * - Computes shortest distances from a specified source vertex using 64-bit integer
  *   arithmetic (long long) for distance calculations.
+ * - Requires finite, non-negative whole-number edge weights.
  * - Protects against integer overflow during path relaxation.
  * - Tracks predecessor vertices via a parent array for complete path reconstruction.
  * - Fully supports disconnected graphs, marking unreachable vertices with Dijkstra::INF.
@@ -81,7 +82,8 @@ public:
      * @return DijkstraResult containing distance array, parent array, and query helpers.
      *
      * @throws std::out_of_range     if @p source is not in [0, graph.vertexCount()).
-     * @throws std::invalid_argument if any negative-weight edge is found in @p graph.
+     * @throws std::invalid_argument if an edge has a negative, non-finite, or fractional weight.
+     * @throws std::overflow_error    if an edge weight cannot fit in a 64-bit distance.
      */
     static DijkstraResult shortestPath(const Graph& graph, int source);
 

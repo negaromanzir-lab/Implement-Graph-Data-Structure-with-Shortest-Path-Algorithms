@@ -79,15 +79,17 @@ public:
      *
      * For an undirected graph the reverse edge is inserted automatically, so the
      * adjacency relationship is always symmetric. Zero-weight edges are allowed.
+     * Weights must be finite; Dijkstra requires whole-number weights because
+     * its result distances use 64-bit integer arithmetic.
      * Parallel edges (the same ordered pair inserted more than once) and
      * self-loops are allowed.
      *
      * @param from   Source vertex index.
      * @param to     Destination vertex index.
-     * @param weight Edge weight (must be >= 0).
+     * @param weight Edge weight (must be finite and >= 0).
      *
      * @throws std::out_of_range      if @p from or @p to is not a valid vertex.
-     * @throws std::invalid_argument  if @p weight is negative.
+     * @throws std::invalid_argument  if @p weight is negative or non-finite.
      */
     void addEdge(int from, int to, double weight);
 

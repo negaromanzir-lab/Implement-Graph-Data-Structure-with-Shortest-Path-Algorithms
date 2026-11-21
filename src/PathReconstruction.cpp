@@ -30,6 +30,9 @@ std::vector<int> PathReconstruction::reconstructPath(int source,
     int current = destination;
 
     while (current != -1) {
+        if (current < 0 || current >= n) {
+            return {};
+        }
         if (visited[static_cast<std::size_t>(current)]) {
             // Cycle detected in parent pointers to prevent infinite looping
             return {};
