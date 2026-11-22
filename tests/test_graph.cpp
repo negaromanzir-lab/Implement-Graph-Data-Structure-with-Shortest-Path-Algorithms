@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <exception>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -154,6 +155,13 @@ void testNegativeWeights() {
     Graph undirected(2, false);
     expectThrow<std::invalid_argument>(
         [&] { undirected.addEdge(0, 1, -1.0); }, "undirected negative weight throws invalid_argument");
+    expectThrow<std::invalid_argument>(
+        [&] { directed.addEdge(0, 1, std::numeric_limits<double>::quiet_NaN()); },
+        "NaN edge weight throws invalid_argument");
+    expectThrow<std::invalid_argument>(
+        [&] { directed.addEdge(0, 1, std::numeric_limits<double>::infinity()); },
+        "infinite edge weight throws invalid_argument");
+    check(directed.edgeCount() == 0, "rejected weights leave graph unchanged");
 }
 
 void testMissingEdgeWeight() {

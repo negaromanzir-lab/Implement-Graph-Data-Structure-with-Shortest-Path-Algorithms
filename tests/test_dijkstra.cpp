@@ -253,13 +253,12 @@ void testLargeEdgeWeightsAndOverflow() {
     // Dijkstra must detect overflow, not wrap around to negative numbers,
     // and keep vertex 2 unreachable.
     Graph overflowGraph(3, true);
-    const double nearMax = static_cast<double>(Dijkstra::INF - 50LL);
-    overflowGraph.addEdge(0, 1, nearMax);
-    overflowGraph.addEdge(1, 2, 100.0);
+    overflowGraph.addEdge(0, 1, 6000000000000000000.0);
+    overflowGraph.addEdge(1, 2, 4000000000000000000.0);
 
     const auto ovResult = Dijkstra::shortestPath(overflowGraph, 0);
-    check(ovResult.getDistanceTo(1) == static_cast<long long>(nearMax),
-          "overflow protection: vertex 1 reaches near-max distance");
+    check(ovResult.getDistanceTo(1) == 6000000000000000000LL,
+          "overflow protection: large representable distance is retained");
     check(ovResult.getDistanceTo(2) == Dijkstra::INF,
           "overflow protection: vertex 2 candidate overflow rejected, remains INF");
     check(!ovResult.hasPathTo(2), "overflow protection: hasPathTo(2) is false");
@@ -272,6 +271,20 @@ void testNegativeEdgeWeightRejection() {
     Graph graph(2, true);
     expectThrow<std::invalid_argument>([&] { graph.addEdge(0, 1, -1.0); },
                                        "negative weights: Graph::addEdge rejects negative weight");
+}
+
+void testInvalidEdgeWeights() {
+    Graph fractional(2, true);
+    fractional.addEdge(0, 1, 1.5);
+    expectThrow<std::invalid_argument>(
+        [&] { Dijkstra::shortestPath(fractional, 0); },
+        "fractional weights are rejected instead of silently truncated");
+
+    Graph tooLarge(2, true);
+    tooLarge.addEdge(0, 1, static_cast<double>(Dijkstra::INF));
+    expectThrow<std::overflow_error>(
+        [&] { Dijkstra::shortestPath(tooLarge, 0); },
+        "edge weight at the 64-bit distance limit throws overflow_error");
 }
 
 // 10. Path Reconstruction Utility Tests
@@ -297,6 +310,10 @@ void testPathReconstructionStandalone() {
                                    "reconstruction: negative source throws out_of_range");
     expectThrow<std::out_of_range>([&] { PathReconstruction::reconstructPath(0, 10, parent); },
                                    "reconstruction: destination >= size throws out_of_range");
+    check(PathReconstruction::reconstructPath(0, 3, {-1, 0, 9, 2}).empty(),
+          "reconstruction: out-of-range parent returns empty path");
+    check(PathReconstruction::reconstructPath(0, 3, {-1, 0, 3, 2}).empty(),
+          "reconstruction: cyclic parent chain returns empty path");
 }
 
 } // namespace
@@ -315,6 +332,7 @@ int main() {
     testInvalidSourceAndQueries();
     testLargeEdgeWeightsAndOverflow();
     testNegativeEdgeWeightRejection();
+    testInvalidEdgeWeights();
     testPathReconstructionStandalone();
 
     std::printf("====================================================\n");

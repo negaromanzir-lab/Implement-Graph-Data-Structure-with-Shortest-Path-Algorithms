@@ -50,14 +50,22 @@ DijkstraResult Dijkstra::shortestPath(const Graph& graph, int source) {
         throw std::out_of_range(vertexOutOfRangeMessage("source", source, numVertices));
     }
 
-    // 2. Validate all graph edge weights upfront: reject negative weights
+    // Validate every edge before running the algorithm or converting weights.
     for (int u = 0; u < numVertices; ++u) {
         for (const auto& edge : graph.getNeighbors(u)) {
-            if (std::isnan(edge.weight) || edge.weight < 0.0) {
+            if (!std::isfinite(edge.weight) || edge.weight < 0.0) {
                 throw std::invalid_argument(
-                    "Dijkstra: negative or invalid edge weight (" + std::to_string(edge.weight) +
+                    "Dijkstra: non-finite or negative edge weight (" + std::to_string(edge.weight) +
                     ") detected on edge from vertex " + std::to_string(u) + " to vertex " +
                     std::to_string(edge.to) + ".");
+            }
+            if (std::trunc(edge.weight) != edge.weight) {
+                throw std::invalid_argument(
+                    "Dijkstra: edge weights must be whole numbers for 64-bit distance calculations.");
+            }
+            if (edge.weight >= static_cast<double>(Dijkstra::INF)) {
+                throw std::overflow_error(
+                    "Dijkstra: edge weight exceeds the largest representable distance.");
             }
         }
     }
@@ -98,13 +106,7 @@ DijkstraResult Dijkstra::shortestPath(const Graph& graph, int source) {
                     std::to_string(rawWeight) + ").");
             }
 
-            // Convert edge weight to long long, capping if it exceeds INF
-            long long weight = 0;
-            if (rawWeight >= static_cast<double>(Dijkstra::INF)) {
-                weight = Dijkstra::INF;
-            } else {
-                weight = static_cast<long long>(rawWeight);
-            }
+            const long long weight = static_cast<long long>(rawWeight);
 
             // Integer overflow protection:
             // Ensure currentDist + weight does not overflow Dijkstra::INF (LLONG_MAX).
